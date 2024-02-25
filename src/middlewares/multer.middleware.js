@@ -1,5 +1,6 @@
 import multer from "multer";
 
+// storage of file locally in temp file
 const storage= multer.diskStorage({
      destination: function (req , file , cb) {
 

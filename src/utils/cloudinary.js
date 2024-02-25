@@ -15,6 +15,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
+// create a function to upload files on cloudinary
 const uploadOnCloudinary = async (localFilePath)=>{
      try {
           if(!localFilePath){
@@ -28,7 +29,7 @@ const uploadOnCloudinary = async (localFilePath)=>{
           // file uploaded at cloudinary
 
           // console.log("file is uploaded on cloudinary", result.url);
-          fs.unlinkSync(localFilePath);
+          fs.unlinkSync(localFilePath);// that file should be clear after uploaded
 
           return result;
 

@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import Jwt  from 'jsonwebtoken';
 
+
+// create a user schema
 const userSchema = new mongoose.Schema({
      username:{
           type: String,
@@ -50,19 +52,19 @@ const userSchema = new mongoose.Schema({
      }
 )
 
-
+// encrypt the password before storing at database
 userSchema.pre("save", async function (next){
      if(!this.isModified("password")) return next;
      this.password = await bcrypt.hash(this.password,10);
      next();
 })
 
-
+// create a explict method to check password
 userSchema.methods.isPasswordCorrect = async function (password){
      return await bcrypt.compare(this.password,password);
 }
 
-
+// Generate a json web token (Access Token)
 userSchema.methods.generateAccessToken = function (){
      Jwt.sign(
           {
@@ -78,7 +80,7 @@ userSchema.methods.generateAccessToken = function (){
      )
 }
 
-
+// generate a json web token (Redresh Token)
 userSchema.methods.generateRefreshToken = function(){
      Jwt.sign(
           {
