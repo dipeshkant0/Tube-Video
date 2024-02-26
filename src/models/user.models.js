@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import Jwt  from 'jsonwebtoken';
+import { apiError } from '../utils/apiError.js';
 
 
 // create a user schema
@@ -59,38 +60,46 @@ userSchema.pre("save", async function (next){
      next();
 })
 
-// create a explict method to check password
+// create a explict methods to check password
 userSchema.methods.isPasswordCorrect = async function (password){
-     return await bcrypt.compare(this.password,password);
+     return await bcrypt.compare(password, this.password);
 }
 
 // Generate a json web token (Access Token)
 userSchema.methods.generateAccessToken = function (){
-     Jwt.sign(
-          {
-               _id: this._id,
-               email: this.email,
-               username: this.username,
-               fullName: this.fullName
-          },
-          process.env.ACCESS_TOKEN_SECRET,
-          {
-               expiresIn: process.env.ACCESS_TOKEN_EXPIRY
-          }
-     )
+     try {
+          return Jwt.sign(
+               {
+                    _id: this._id,
+                    email: this.email,
+                    username: this.username,
+                    fullName: this.fullName
+               },
+               process.env.ACCESS_TOKEN_SECRET,
+               {
+                    expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+               }
+          )
+     } catch (error) {
+          throw new apiError(500 , "Problem in jwt sign(Access Token)")
+     }
 }
 
 // generate a json web token (Redresh Token)
 userSchema.methods.generateRefreshToken = function(){
-     Jwt.sign(
-          {
-               _id: this._id
-          },
-          process.env.REFRESH_TOKEN_SECRET,
-          {
-               expiresIn: process.env.REFRESH_TOKEN_EXPIRY
-          }
-     )
+     try {
+           return Jwt.sign(
+               {
+                    _id: this._id
+               },
+               process.env.REFRESH_TOKEN_SECRET,
+               {
+                    expiresIn: process.env.REFRESH_TOKEN_EXPIRY
+               }
+          )
+     } catch (error) {
+          throw new apiError(500 , "Problem in jwt sign(refresh Token)")
+     }
 }
 
 

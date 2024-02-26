@@ -1,17 +1,19 @@
 import Jwt from "jsonwebtoken";
-import { apiError } from "../utils/apiError";
-import { asyncHandler } from "../utils/asyncHandler";
-import { User } from "../models/user.models";
+import { apiError } from "../utils/apiError.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { User } from "../models/user.models.js";
 
+
+// Middleware for very user using JWT (Token)
 export const verifyJwt = asyncHandler( async(req,res,next)=>{
-     const token = res.cookies?.accessToken || res.header("Authorization")?.replace('Bearer ','');
+     try{
+          const token = req.cookies?.accessToken || req.header("Authorization")?.replace('Bearer ','');
 
-    try {
           if(!token){
-               throw new apiError(400, "Unauthorize Token")
+               throw new apiError(402, "Token Not Found")
           }
      
-          const decodedToken = Jwt.verify(token,process.env.ACCESS_TOKEN_SECRET);
+          const decodedToken = Jwt.verify(token , process.env.ACCESS_TOKEN_SECRET);
      
           const user = await User.findById(decodedToken._id).select("-password -refreshToken");
      
@@ -23,7 +25,7 @@ export const verifyJwt = asyncHandler( async(req,res,next)=>{
           next()
  
     } catch (error) {
-          throw new apiError(400, "Error during token verification")
+          throw new apiError(400, error?.message||" Access token not found")
     }
 })
 
