@@ -4,17 +4,18 @@ import {User} from "../models/user.models.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { apiResponse } from "../utils/apiResponse.js";
 import clearTemp from "../utils/clearTemp.js";
-
+import  Jwt  from "jsonwebtoken";
 
 //generate Access and Refresh token
 const generateAccessAndRefershToken = async(userId)=>{
     try { 
           const user = await User.findById(userId);
 
-          const accessToken = user.generateAccessToken();
-          const refreshToken = user.generateRefreshToken();
+          const accessToken = await user.generateAccessToken();
+          const refreshToken = await user.generateRefreshToken();
 
           user.refreshToken = refreshToken  //refreshToken added to user Object
+          console.log(refreshToken);
           await user.save({ validateBeforeSave: false });
       
           return { accessToken, refreshToken};
@@ -122,11 +123,12 @@ const loginUser = asyncHandler( async (req, res)=>{
   // return response
 
   const { username, email, password } = req.body;
-  if(!username && !email){
+
+  if((!username) && (!email)) {
     throw new apiError(400 , "username or email is required");
   }
 
-  const user = User.findOne({
+  const user = await User.findOne({
     $or:[{username},{email}]
   })
 
@@ -136,7 +138,11 @@ const loginUser = asyncHandler( async (req, res)=>{
   }
 
   //Validate Password
-  const validatePassword = user.isPasswordCorrect(password)
+  if(!password){
+    throw new apiError(400 , "Password Required")
+  }
+
+  const validatePassword = await user.isPasswordCorrect(password)
   if(!validatePassword){
     throw new apiError(400 , "Invalid credential")
   }
@@ -144,7 +150,11 @@ const loginUser = asyncHandler( async (req, res)=>{
   //generate Token
   const { accessToken, refreshToken } = await generateAccessAndRefershToken(user._id);
 
-  const loggedUser =  await User.findById(user._id).select("-passward -refreshToken");
+  if(!accessToken || !refreshToken){
+    throw new apiError(400, "Token is not generated")
+  }
+
+  const loggedUser =  await User.findById(user._id).select("-password -refreshToken");
 
   //cerate option for secure cookies
   const option ={
@@ -189,9 +199,50 @@ const logoutUser = asyncHandler( async (req,res)=>{
 
 )
 
+//refresh Token
+
+const refreshAccessToken = asyncHandler( async(req,res)=>{
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+
+    if(!incomingRefreshToken){
+      throw new apiError( 400 , " Unauthorized Access")
+    }
+
+   const decodedToken = Jwt.decode( 
+    incomingRefreshToken ,
+    process.env.REFRESH_TOKEN_SECRET
+    );
+
+    const user = await User.findById(decodedToken?._id);
+
+    if(!user){
+      throw new apiError( 402 ,"Invalid Refresh Token")
+    }
+
+    if(user.refreshToken !== incomingRefreshToken){
+      throw new apiError(402 , "Unauthorized User");
+    }
+
+    const { accessToken , refreshToken} = await generateAccessAndRefershToken(user._id);
+    const option ={
+      httpOnly: true,
+      secure: true
+    }
+
+    return res.status(200)
+    .cookie("accessToken",accessToken,option)
+    .cookie("refreshToken" ,refreshToken, option)
+    .json(
+      new apiResponse(201, {} , "Access Token regenerated Successfully")
+    )
+    
+})
+
+
 
 export {
   userRegister,
   loginUser,
-  logoutUser
+  logoutUser,
+  refreshAccessToken
 };
