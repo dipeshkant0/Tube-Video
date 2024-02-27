@@ -40,4 +40,40 @@ const uploadOnCloudinary = async (localFilePath)=>{
      }
 }
 
-export {uploadOnCloudinary};
+const deleteFromCloudinary = async(url,resource_types)=>{
+     try {
+
+          if(!url){
+               console.log("public Id is not found");
+               return null;
+          }
+
+          const part = url.split('/')
+          const publicIdWithExt = part.pop()
+          const publicId = publicIdWithExt.split('.')[0]
+     
+          const option = resource_types === 'image'? 
+               {    invalidate: true,
+                    resource_type:'image'
+               } :
+
+               {
+                    invalidate: true,
+                    resource_type:'video'
+               }
+          
+          
+         const result = await cloudinary.uploader.destroy(publicId,option);
+          console.log(result);
+          return result;
+          
+     } catch (error) {
+          console.error(error?.message);
+          return null;
+     }
+}
+
+export {
+     uploadOnCloudinary,
+     deleteFromCloudinary
+};
