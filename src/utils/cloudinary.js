@@ -48,6 +48,7 @@ const deleteFromCloudinary = async(url,resource_types)=>{
                return null;
           }
 
+          //extract public id from asset url
           const part = url.split('/')
           const publicIdWithExt = part.pop()
           const publicId = publicIdWithExt.split('.')[0]

@@ -166,7 +166,7 @@ const loginUser = asyncHandler( async (req, res)=>{
   .cookie("accessToken", accessToken, option)
   .cookie("refreshToken", refreshToken, option)
   .json(
-    new apiResponse(201,loggedUser,"loggin succesfully")
+    new apiResponse(201,loggedUser,"login succesfully")
   )
    
 } )
@@ -174,10 +174,11 @@ const loginUser = asyncHandler( async (req, res)=>{
 //Logout user
 const logoutUser = asyncHandler( async (req,res)=>{
   const userId = req.user._id;
-  await User.findByIdAndUpdate(userId,{
+  await User.findByIdAndUpdate(userId,
+      {
             $set:{
-              refreshToken: undefined
-            }
+                  refreshToken: undefined
+                }
       },
       {
         new:true
@@ -294,7 +295,6 @@ const getCurrentUser = asyncHandler(async(req, res) => {
 
 const updateAccountDetails = asyncHandler(async(req,res)=>{
     const { email, fullName } = req.body
-    console.log(email,fullName);
     if(!(email && fullName)){
       throw new apiError(400,"All fields are required");
     }
