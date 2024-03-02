@@ -420,7 +420,83 @@ const deleteCoverImage = asyncHandler( async (req,res)=>{
 
 })
 
+// get User Channel Profile
+
+const getUserChannelProfile = asyncHandler(async(req,res)=>{
+  const {username} = req.query;
+
+  if(!username?.trim()){
+    throw new apiError(402, "missing UserId")
+  }
+
+ const channel = await User.aggregate([
+  {
+    $match:{
+      username: username?.toLowerCase()
+    }
+  },
+  { // to find total subscriber
+    $lookup:{
+      from:"subscriptions",
+      localField:"_id",
+      foreignField:"channel",
+      as:"subscribers"
+    },
+  },
+
+  { // to find Subscribed to
+    $lookup:{
+      from:"subscriptions",
+      localField:"_id",
+      foreignField:"subscriber",
+      as:"subscribeTo"
+    }
+  },
+  {// set new field
+    $addFields:{
+      scbscriberCount:{
+        $size:"$subscribers"
+      },
+      subscribeToCount:{
+        $size:"$subscribeTo"
+      },
+      isSubscribed:{
+        $cond:{ 
+          if:{$in:[req.user?._id,"$subscribers.subscriber"]},
+          then:true,
+          else:false
+        }
+      }
+    }
+  },
+  {
+    $project:{
+      fullName:1,
+      username:1,
+      scbscriberCount:1,
+      subscribeToCount:1,
+      isSubscribed:1,
+      avatar:1,
+      coverImage:1
+    }
+  }
+ ])
+
+ if(!channel?.length){
+  throw new apiError(402, "Channel doesn't exist")
+ }
+
+ return res.status(200)
+        .json(
+          new apiResponse(202,channel[0],"Chennel fetched successfully")
+        )
+
+})
+
+
+
 export {
+
   userRegister,
   loginUser,
   logoutUser,
@@ -430,5 +506,7 @@ export {
   updateAccountDetails,
   updateAvatar,
   updateCoverImage,
-  deleteCoverImage
+  deleteCoverImage,
+  getUserChannelProfile
+
 };
