@@ -423,7 +423,7 @@ const deleteCoverImage = asyncHandler( async (req,res)=>{
 // get User Channel Profile
 
 const getUserChannelProfile = asyncHandler(async(req,res)=>{
-  const {username} = req.query;
+  const {username} = req.params;
 
   if(!username?.trim()){
     throw new apiError(402, "missing UserId")

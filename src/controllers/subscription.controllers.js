@@ -40,12 +40,12 @@ const subscribe = asyncHandler( async(req, res)=>{
                $addFields:{
                     
                     isSubscribed:{
-                    $cond:{ 
-                    if:{$in:[channelId?._id,"$subscribeTo.channel"]},
-                    
-                    then:true,
-                    else:false
-                    }
+                         $cond:{ 
+                         if:{$in:[channelId?._id,"$subscribeTo.channel"]},
+                         
+                         then:true,
+                         else:false
+                         }
                     }
                }
           },
@@ -160,8 +160,43 @@ const unsuscribed = asyncHandler( async (req,res)=>{
      
 })
 
+
+//get subscribed channel list
+
+const subscribedList =asyncHandler(async(req,res)=>{
+     const username = req.user?._id ;
+
+     if(!username){
+          throw new apiError(400, "sign in required")
+     }
+     const subscribedTo = await User.aggregate([
+          {
+               $match:{
+                 username: req.user?.username
+               }
+          },
+          { 
+               $lookup:{
+                 from:"subscriptions",
+                 localField:"_id",
+                 foreignField:"subscriber",
+                 as:"subscribeTo"
+               }
+          },
+          {
+               $project:{
+                    subscribeTo:1
+               }
+          }
+     ])
+
+     console.log(subscribedTo[0].subscribeTo[0].channel);
+
+})
+
 export
 {
      subscribe ,
-     unsuscribed
+     unsuscribed,
+     subscribedList
 }
